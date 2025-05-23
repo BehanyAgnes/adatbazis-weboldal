@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adatbázis-kezelés Alapok</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInDown 1s ease-out;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tab-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .tab-button:hover, .tab-button.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .content-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .content-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .sql-editor {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .sql-editor::before {
+            content: 'SQL';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .sql-keyword {
+            color: #66d9ef;
+            font-weight: bold;
+        }
+
+        .sql-string {
+            color: #a6e22e;
+        }
+
+        .sql-comment {
+            color: #75715e;
+            font-style: italic;
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .demo-table th, .demo-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .demo-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .demo-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .demo-table tr:hover {
+            background: #e2e8f0;
+            transition: background 0.3s ease;
+        }
+
+        .interactive-demo {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .demo-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .quiz-section {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .quiz-question {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .quiz-options {
+            margin: 10px 0;
+        }
+
+        .quiz-options label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .quiz-options label:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .container { padding: 10px; }
+            .content-section { padding: 20px; }
+            .nav-tabs { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ Adatbázis-kezelés Alapok</h1>
+            <p>Fedezd fel az adatbázisok világát interaktív módon</p>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="tab-button active" data-tab="intro">Bevezetés</button>
+            <button class="tab-button" data-tab="types">Típusok</button>
+            <button class="tab-button" data-tab="sql">SQL Alapok</button>
+            <button class="tab-button" data-tab="demo">Interaktív Demo</button>
+            <button class="tab-button" data-tab="quiz">Kvíz</button>
+        </div>
+
+        <div id="intro" class="content-section active">
+            <h2>Mi az az adatbázis?</h2>
+            <p>Az adatbázis egy strukturált információgyűjtemény, amely lehetővé teszi az adatok hatékony tárolását, kezelését és lekérdezését. Az adatbázis-kezelő rendszerek (DBMS) segítségével könnyedén dolgozhatunk nagy mennyiségű adattal.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📊 Strukturált tárolás</h3>
+                    <p>Az adatok rendezett, logikus struktúrában tárolódnak, ami megkönnyíti a keresést és a karbantartást.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Gyors lekérdezés</h3>
+                    <p>Hatékony indexelés és optimalizált lekérdezések révén gyorsan hozzáférhetünk a szükséges információkhoz.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔒 Biztonság</h3>
+                    <p>Beépített biztonsági funkciók védik az adatokat a jogosulatlan hozzáféréstől és módosítástól.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🤝 Többfelhasználós hozzáférés</h3>
+                    <p>Egyszerre több felhasználó is dolgozhat az adatokkal, megfelelő tranzakciókezeléssel.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="types" class="content-section">
+            <h2>Adatbázis típusok</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🏗️ Relációs adatbázisok (SQL)</h3>
+                    <p><strong>Példák:</strong> MySQL, PostgreSQL, Oracle, SQL Server</p>
+                    <p>Táblákban tárolt adatok, kapcsolatok, ACID tulajdonságok. A legszélesebb körben használt típus.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📄 Dokumentum adatbázisok</h3>
+                    <p><strong>Példák:</strong> MongoDB, CouchDB</p>
+                    <p>JSON-szerű dokumentumokban tárolt adatok, rugalmas séma, horizontális skálázhatóság.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔑 Kulcs-érték adatbázisok</h3>
+                    <p><strong>Példák:</strong> Redis, DynamoDB</p>
+                    <p>Egyszerű kulcs-érték párok, rendkívül gyors hozzáférés, cache-elésre ideális.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🕸️ Gráf adatbázisok</h3>
+                    <p><strong>Példák:</strong> Neo4j, ArangoDB</p>
+                    <p>Csomópontok és élek kapcsolatainak tárolása, komplex kapcsolatok elemzése.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="sql" class="content-section">
+            <h2>SQL Alapok</h2>
+            <p>A Structured Query Language (SQL) a relációs adatbázisok standard nyelve. Itt találod a legfontosabb parancsokat:</p>
+
+            <h3>Adatok lekérdezése (SELECT)</h3>
+            <div class="sql-editor">
+<span class="sql-comment">-- Összes rekord lekérdezése</span>
+<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> felhasznalok;
+
+<span class="sql-comment">-- Specifikus oszlopok lekérdezése feltétellel</span>  
+<span class="sql-keyword">SELECT</span> nev, email <span class="sql-keyword">FROM</span> felhasznalok 
+<span class="sql-keyword">WHERE</span> kor > 18 
+<span class="sql-keyword">ORDER BY</span> nev <span class="sql-keyword">ASC</span>;
+            </div>
+
+            <h3>Adatok beszúrása (INSERT)</h3>
+            <div class="sql-editor">
+<span class="sql-comment">-- Új rekord hozzáadása</span>
+<span class="sql-keyword">INSERT INTO</span> felhasznalok (nev, email, kor) 
+<span class="sql-keyword">VALUES</span> (<span class="sql-string">'Kovács János'</span>, <span class="sql-string">'janos@email.com'</span>, 25);
+            </div>
+
+            <h3>Adatok frissítése (UPDATE)</h3>
+            <div class="sql-editor">
+<span class="sql-comment">-- Meglévő rekord módosítása</span>
+<span class="sql-keyword">UPDATE</span> felhasznalok 
+<span class="sql-keyword">SET</span> kor = 26 
+<span class="sql-keyword">WHERE</span> email = <span class="sql-string">'janos@email.com'</span>;
+            </div>
+
+            <h3>Adatok törlése (DELETE)</h3>
+            <div class="sql-editor">
+<span class="sql-comment">-- Rekord törlése</span>
+<span class="sql-keyword">DELETE FROM</span> felhasznalok 
+<span class="sql-keyword">WHERE</span> kor < 18;
+            </div>
+        </div>
+
+        <div id="demo" class="content-section">
+            <h2>Interaktív Adatbázis Demo</h2>
+            
+            <div class="interactive-demo">
+                <h3>🎮 Felhasználói adatok kezelése</h3>
+                <p>Próbáld ki az alapvető adatbázis műveleteket!</p>
+                
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="addUser()">➕ Felhasználó hozzáadása</button>
+                    <button class="demo-button" onclick="updateUser()">✏️ Adatok frissítése</button>
+                    <button class="demo-button" onclick="deleteUser()">🗑️ Felhasználó törlése</button>
+                    <button class="demo-button" onclick="resetData()">🔄 Alaphelyzet</button>
+                </div>
+            </div>
+
+            <table class="demo-table" id="userTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Név</th>
+                        <th>Email</th>
+                        <th>Kor</th>
+                        <th>Részleg</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- A JavaScript tölti fel -->
+                </tbody>
+            </table>
+
+            <div id="operationLog" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; color: white;">
+                <strong>Műveletek naplója:</strong>
+                <div id="logContent">Készülj fel az adatbázis műveletek tesztelésére!</div>
+            </div>
+        </div>
+
+        <div id="quiz" class="content-section">
+            <div class="quiz-section">
+                <h2>🧠 Adatbázis Kvíz</h2>
+                <p>Teszteld a tudásod! Válaszd ki a helyes opciót:</p>
+
+                <div class="quiz-question">
+                    <h4>1. Mi a jelentése az SQL rövidítésnek?</h4>
+                    <div class="quiz-options">
+                        <label><input type="radio" name="q1" value="a"> Structured Query Language</label>
+                        <label><input type="radio" name="q1" value="b"> Simple Query Language</label>
+                        <label><input type="radio" name="q1" value="c"> System Query Language</label>
+                    </div>
+                </div>
+
+                <div class="quiz-question">
+                    <h4>2. Melyik parancs szolgál adatok lekérdezésére?</h4>
+                    <div class="quiz-options">
+                        <label><input type="radio" name="q2" value="a"> INSERT</label>
+                        <label><input type="radio" name="q2" value="b"> SELECT</label>
+                        <label><input type="radio" name="q2" value="c"> UPDATE</label>
+                    </div>
+                </div>
+
+                <div class="quiz-question">
+                    <h4>3. Mi a NoSQL adatbázisok egyik fő előnye?</h4>
+                    <div class="quiz-options">
+                        <label><input type="radio" name="q3" value="a"> Rugalmas séma</label>
+                        <label><input type="radio" name="q3" value="b"> Csak SQL nyelvet használ</label>
+                        <label><input type="radio" name="q3" value="c"> Mindig gyorsabb</label>
+                    </div>
+                </div>
+
+                <button class="demo-button" onclick="checkQuiz()" style="margin-top: 20px; background: rgba(255,255,255,0.3);">
+                    📊 Eredmény ellenőrzése
+                </button>
+                <div id="quizResult" style="margin-top: 15px; font-weight: bold;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                
+                // Remove active class from all buttons and sections
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding section
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Demo database data
+        let users = [
+            {id: 1, nev: 'Nagy Anna', email: 'anna.nagy@email.com', kor: 28, reszleg: 'IT'},
+            {id: 2, nev: 'Kovács Péter', email: 'peter.kovacs@email.com', kor: 35, reszleg: 'Marketing'},
+            {id: 3, nev: 'Szabó Mária', email: 'maria.szabo@email.com', kor: 42, reszleg: 'HR'},
+            {id: 4, nev: 'Tóth László', email: 'laszlo.toth@email.com', kor: 31, reszleg: 'Pénzügy'}
+        ];
+
+        let nextId = 5;
+        let operations = [];
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.nev}</td>
+                    <td>${user.email}</td>
+                    <td>${user.kor}</td>
+                    <td>${user.reszleg}</td>
+                `;
+            });
+        }
+
+        function logOperation(operation) {
+            const timestamp = new Date().toLocaleTimeString();
+            operations.unshift(`[${timestamp}] ${operation}`);
+            if (operations.length > 5) operations.pop();
+            
+            document.getElementById('logContent').innerHTML = operations.join('<br>');
+        }
+
+        function addUser() {
+            const names = ['Kiss Tamás', 'Varga Éva', 'Molnár Gábor', 'Horváth Zita', 'Németh Béla'];
+            const departments = ['IT', 'Marketing', 'HR', 'Pénzügy', 'Értékesítés'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            const dept = departments[Math.floor(Math.random() * departments.length)];
+            
+            const newUser = {
+                id: nextId++,
+                nev: name,
+                email: `${name.toLowerCase().replace(' ', '.')}@email.com`,
+                kor: Math.floor(Math.random() * 40) + 20,
+                reszleg: dept
+            };
+            
+            users.push(newUser);
+            renderTable();
+            logOperation(`INSERT: Új felhasználó hozzáadva - ${newUser.nev}`);
+        }
+
+        function updateUser() {
+            if (users.length === 0) return;
+            
+            const randomIndex = Math.floor(Math.random() * users.length);
+            const user = users[randomIndex];
+            const oldAge = user.kor;
+            user.kor = Math.floor(Math.random() * 40) + 20;
+            
+            renderTable();
+            logOperation(`UPDATE: ${user.nev} kora módosítva ${oldAge} → ${user.kor}`);
+        }
+
+        function deleteUser() {
+            if (users.length === 0) return;
+            
+            const randomIndex = Math.floor(Math.random() * users.length);
+            const deletedUser = users.splice(randomIndex, 1)[0];
+            
+            renderTable();
+            logOperation(`DELETE: ${deletedUser.nev} törölve az adatbázisból`);
+        }
+
+        function resetData() {
+            users = [
+                {id: 1, nev: 'Nagy Anna', email: 'anna.nagy@email.com', kor: 28, reszleg: 'IT'},
+                {id: 2, nev: 'Kovács Péter', email: 'peter.kovacs@email.com', kor: 35, reszleg: 'Marketing'},
+                {id: 3, nev: 'Szabó Mária', email: 'maria.szabo@email.com', kor: 42, reszleg: 'HR'},
+                {id: 4, nev: 'Tóth László', email: 'laszlo.toth@email.com', kor: 31, reszleg: 'Pénzügy'}
+            ];
+            nextId = 5;
+            operations = [];
+            
+            renderTable();
+            logOperation('RESET: Adatbázis visszaállítva az alapállapotba');
+        }
+
+        function checkQuiz() {
+            const answers = {q1: 'a', q2: 'b', q3: 'a'};
+            let score = 0;
+            let total = 0;
+            
+            for (let question in answers) {
+                const selected = document.querySelector(`input[name="${question}"]:checked`);
+                total++;
+                if (selected && selected.value === answers[question]) {
+                    score++;
+                }
+            }
+            
+            const percentage = Math.round((score / total) * 100);
+            let message = `Eredmény: ${score}/${total} (${percentage}%)`;
+            
+            if (percentage === 100) {
+                message += ' 🎉 Kiváló! Tökéletes eredmény!';
+            } else if (percentage >= 66) {
+                message += ' 👍 Jó munka! Majdnem minden helyes!';
+            } else {
+                message += ' 📚 Érdemes még gyakorolni!';
+            }
+            
+            document.getElementById('quizResult').innerHTML = message;
+        }
+
+        // Initialize the table on page load
+        renderTable();
+        logOperation('Adatbázis inicializálva - 4 felhasználó betöltve');
+    </script>
+</body>
+</html>
